@@ -361,93 +361,15 @@
     gap: 12px;
     margin-bottom: 12px;
   }
-
-  .comments-toggle {
+  .video-stats span {
     display: flex;
     align-items: center;
-    gap: 8px;
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.12);
-    border-radius: 20px;
-    padding: 8px 16px;
-    color: var(--text);
-    font-size: 13px;
-    font-family: 'DM Sans', sans-serif;
-    cursor: pointer;
-    width: fit-content;
+    gap: 4px;
   }
-  .comments-toggle:active { opacity: 0.7; }
+  .video-stats svg {
+    flex-shrink: 0;
+  }
 
-  /* ── COMMENTS DRAWER ── */
-  .comments-drawer {
-    position: absolute;
-    bottom: 0; left: 0; right: 0;
-    z-index: 100;
-    background: var(--surface);
-    border-radius: 20px 20px 0 0;
-    border-top: 1px solid var(--border);
-    max-height: 70dvh;
-    display: flex;
-    flex-direction: column;
-    transform: translateY(100%);
-    transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-  }
-  .comments-drawer.open { transform: translateY(0); }
-  .drawer-handle {
-    width: 36px; height: 4px;
-    background: var(--border);
-    border-radius: 2px;
-    margin: 12px auto 8px;
-    flex-shrink: 0;
-  }
-  .drawer-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 4px 20px 12px;
-    flex-shrink: 0;
-    border-bottom: 1px solid var(--border);
-  }
-  .drawer-header h3 { font-size: 15px; font-weight: 600; }
-  .drawer-close {
-    background: none; border: none;
-    color: var(--muted); font-size: 22px;
-    cursor: pointer; line-height: 1; padding: 0;
-  }
-  .comments-list {
-    flex: 1;
-    overflow-y: auto;
-    padding: 16px 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    -webkit-overflow-scrolling: touch;
-  }
-  .comment-item { display: flex; gap: 12px; }
-  .comment-avatar {
-    width: 32px; height: 32px;
-    border-radius: 50%;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 13px; color: var(--muted);
-    flex-shrink: 0;
-    font-family: 'DM Mono', monospace;
-  }
-  .comment-user {
-    font-size: 12px; font-weight: 600;
-    color: var(--accent);
-    font-family: 'DM Mono', monospace;
-    margin-bottom: 3px;
-  }
-  .comment-text { font-size: 14px; line-height: 1.4; color: var(--text); }
-  .comment-likes { font-size: 11px; color: var(--muted); margin-top: 4px; font-family: 'DM Mono', monospace; }
-  .comments-loading, .comments-empty {
-    text-align: center; padding: 24px;
-    font-size: 14px; color: var(--muted);
-    font-family: 'DM Mono', monospace;
-  }
 </style>
 </head>
 <body>
@@ -654,13 +576,6 @@ async function fetchVideos(username, cursor = '') {
   return res.json();
 }
 
-// ── FETCH COMMENTS VIA WORKER ──
-async function fetchComments(videoId) {
-  const res = await fetch(`${WORKER_URL}?action=comments&video_id=${videoId}`);
-  if (!res.ok) throw new Error(`Comments API error ${res.status}`);
-  return res.json();
-}
-
 // ── LOAD USER ──
 async function loadUser(username) {
   username = username.replace('@', '').trim();
@@ -784,20 +699,14 @@ function appendSlide(v, i) {
         <button class="caption-toggle" id="captoggle-${i}" onclick="toggleCaption(${i})">more</button>
       ` : ''}
       <div class="video-stats">
-        <span>▶ ${v.stats.plays}</span>
-        <span>♥ ${v.stats.likes}</span>
-        <span>💬 ${v.stats.comments}</span>
-      </div>
-      ${v.id ? `<button class="comments-toggle" onclick="openComments(${i})">💬 Comments</button>` : ''}
-    </div>
-    <div class="comments-drawer" id="drawer-${i}">
-      <div class="drawer-handle"></div>
-      <div class="drawer-header">
-        <h3>Comments</h3>
-        <button class="drawer-close" onclick="closeComments(${i})">×</button>
-      </div>
-      <div class="comments-list" id="comments-${i}">
-        <div class="comments-loading">Tap to load…</div>
+        <span>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          ${v.stats.plays}
+        </span>
+        <span>
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></svg>
+          ${v.stats.likes}
+        </span>
       </div>
     </div>
   `;
@@ -850,7 +759,6 @@ function setupScrollObserver() {
         currentlyPlaying = video;
         currentSlide = parseInt(slide.dataset.index);
         updateCounter();
-        document.querySelectorAll('.comments-drawer.open').forEach(d => d.classList.remove('open'));
         if (currentSlide >= videos.length - 3 && window._nextCursor && !window._pendingLoad) {
           loadMoreVideos();
         }
@@ -890,49 +798,6 @@ async function loadMoreVideos() {
 // ── COUNTER ──
 function updateCounter() {
   videoCounter.textContent = `${currentSlide + 1} / ${videos.length}`;
-}
-
-// ── COMMENTS ──
-async function openComments(i) {
-  const drawer = document.getElementById('drawer-' + i);
-  const list   = document.getElementById('comments-' + i);
-  drawer.classList.add('open');
-  if (list.dataset.loaded) return;
-  list.dataset.loaded = 'true';
-  list.innerHTML = '<div class="comments-loading">Loading comments…</div>';
-
-  try {
-    const v = videos[i];
-    const data = await fetchComments(v.id);
-    const comments = data?.comments || data?.data || [];
-
-    if (!comments.length) {
-      list.innerHTML = '<div class="comments-empty">No comments found.</div>';
-      return;
-    }
-
-    list.innerHTML = comments.slice(0, 50).map(c => {
-      const user  = c?.user?.unique_id || c?.user?.nickname || c?.author || '?';
-      const text  = c?.text || c?.comment || '';
-      const likes = c?.digg_count || c?.like_count || 0;
-      return `
-        <div class="comment-item">
-          <div class="comment-avatar">${escHtml((user[0] || '?').toUpperCase())}</div>
-          <div class="comment-body">
-            <div class="comment-user">@${escHtml(user)}</div>
-            <div class="comment-text">${escHtml(text)}</div>
-            ${likes ? `<div class="comment-likes">♥ ${fmt(likes)}</div>` : ''}
-          </div>
-        </div>
-      `;
-    }).join('');
-  } catch(e) {
-    list.innerHTML = `<div class="comments-empty">Couldn't load comments.</div>`;
-  }
-}
-
-function closeComments(i) {
-  document.getElementById('drawer-' + i)?.classList.remove('open');
 }
 
 // ── BACK ──
