@@ -600,6 +600,11 @@ async function loadUser(username) {
       throw new Error(`Found ${rawList.length} posts but couldn't extract playable video URLs. The account may only have slideshows or private content.`);
     }
 
+    // DEBUG — show first video URL for 5 seconds so we can see what we're working with
+    const firstUrl = videos[0]?.videoUrl || 'EMPTY';
+    loadingText.textContent = `URL: ${firstUrl.slice(0, 100)}`;
+    await new Promise(r => setTimeout(r, 5000));
+
     // Store cursor for lazy loading more
     window._nextCursor = data?.cursor || data?.next_cursor || '';
     window._currentHandle = username;
