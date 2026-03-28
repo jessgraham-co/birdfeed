@@ -604,7 +604,10 @@ async function loadUser(username) {
       throw new Error(`No videos found for "@${username}". Check the username and try again.`);
     }
 
-    videos = rawList.map(parseVideo).filter(v => v.id);
+    videos = rawList
+      .filter(item => !item?.is_top && !item?.isTop) // skip pinned videos
+      .map(parseVideo)
+      .filter(v => v.id);
 
     if (!videos.length) {
       throw new Error(`Found ${rawList.length} posts but couldn't extract playable video URLs. The account may only have slideshows or private content.`);
@@ -798,7 +801,10 @@ async function loadMoreVideos() {
   try {
     const data = await fetchVideos(window._currentHandle, window._nextCursor);
     const rawList = data?.aweme_list || data?.videos || data?.data || [];
-    const newVideos = rawList.map(parseVideo).filter(v => v.id);
+    const newVideos = rawList
+      .filter(item => !item?.is_top && !item?.isTop)
+      .map(parseVideo)
+      .filter(v => v.id);
     newVideos.forEach(v => {
       videos.push(v);
       appendSlide(v, videos.length - 1);
