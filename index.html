@@ -29,15 +29,13 @@
     overscroll-behavior: none;
   }
 
-  /* ── SCREENS ── */
   .screen { display: none; height: 100vh; height: 100dvh; flex-direction: column; }
   .screen.active { display: flex; }
 
-  /* ── HOME SCREEN ── */
+  /* ── HOME ── */
   #home {
     padding: 0 24px;
     padding-top: env(safe-area-inset-top, 20px);
-    gap: 0;
   }
 
   .home-header {
@@ -89,7 +87,6 @@
     font-family: 'DM Sans', sans-serif;
     cursor: pointer;
     white-space: nowrap;
-    transition: opacity 0.15s;
   }
   .search-row button:active { opacity: 0.8; }
 
@@ -148,7 +145,6 @@
     line-height: 1;
   }
   .saved-delete:active { color: var(--accent2); }
-
   .empty-saved {
     color: var(--muted);
     font-size: 14px;
@@ -157,7 +153,39 @@
     font-family: 'DM Mono', monospace;
   }
 
-  /* ── FEED SCREEN ── */
+  .error-banner {
+    background: rgba(255,107,53,0.12);
+    border: 1px solid var(--accent2);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--accent2);
+    font-family: 'DM Mono', monospace;
+    margin-bottom: 16px;
+    line-height: 1.5;
+  }
+
+  /* ── LOADING ── */
+  #loading {
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+  }
+  .spinner {
+    width: 36px; height: 36px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  /* ── FEED ── */
   #feed {
     position: relative;
     overflow: hidden;
@@ -182,9 +210,6 @@
     font-size: 14px;
     font-family: 'DM Sans', sans-serif;
     cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 6px;
   }
   .back-btn:active { opacity: 0.7; }
   .feed-username {
@@ -207,11 +232,21 @@
     cursor: pointer;
     white-space: nowrap;
   }
-  .save-btn.saved-state {
-    background: var(--accent);
-    color: #000;
-  }
+  .save-btn.saved-state { background: var(--accent); color: #000; }
   .save-btn:active { opacity: 0.7; }
+
+  .video-counter {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    position: absolute;
+    top: calc(env(safe-area-inset-top, 12px) + 52px);
+    right: 16px;
+    z-index: 51;
+    background: rgba(0,0,0,0.5);
+    padding: 4px 8px;
+    border-radius: 6px;
+  }
 
   .video-scroll {
     flex: 1;
@@ -228,7 +263,6 @@
     scroll-snap-align: start;
     position: relative;
     display: flex;
-    flex-direction: column;
     align-items: center;
     justify-content: center;
     background: #000;
@@ -241,6 +275,23 @@
     position: absolute;
     top: 0; left: 0;
   }
+
+  .mute-btn {
+    position: absolute;
+    top: 50%;
+    right: 16px;
+    z-index: 20;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 50%;
+    width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    cursor: pointer;
+    color: white;
+    transform: translateY(-50%);
+  }
+  .mute-btn:active { opacity: 0.7; }
 
   .video-overlay {
     position: absolute;
@@ -277,6 +328,15 @@
     display: block;
   }
 
+  .video-stats {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
   .comments-toggle {
     display: flex;
     align-items: center;
@@ -309,7 +369,6 @@
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
   .comments-drawer.open { transform: translateY(0); }
-
   .drawer-handle {
     width: 36px; height: 4px;
     background: var(--border);
@@ -325,20 +384,12 @@
     flex-shrink: 0;
     border-bottom: 1px solid var(--border);
   }
-  .drawer-header h3 {
-    font-size: 15px;
-    font-weight: 600;
-  }
+  .drawer-header h3 { font-size: 15px; font-weight: 600; }
   .drawer-close {
-    background: none;
-    border: none;
-    color: var(--muted);
-    font-size: 22px;
-    cursor: pointer;
-    line-height: 1;
-    padding: 0;
+    background: none; border: none;
+    color: var(--muted); font-size: 22px;
+    cursor: pointer; line-height: 1; padding: 0;
   }
-
   .comments-list {
     flex: 1;
     overflow-y: auto;
@@ -348,119 +399,29 @@
     gap: 16px;
     -webkit-overflow-scrolling: touch;
   }
-
-  .comment-item {
-    display: flex;
-    gap: 12px;
-  }
+  .comment-item { display: flex; gap: 12px; }
   .comment-avatar {
     width: 32px; height: 32px;
     border-radius: 50%;
     background: var(--surface2);
     border: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 13px;
-    color: var(--muted);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; color: var(--muted);
     flex-shrink: 0;
     font-family: 'DM Mono', monospace;
   }
-  .comment-body {}
   .comment-user {
-    font-size: 12px;
-    font-weight: 600;
+    font-size: 12px; font-weight: 600;
     color: var(--accent);
     font-family: 'DM Mono', monospace;
     margin-bottom: 3px;
   }
-  .comment-text {
-    font-size: 14px;
-    line-height: 1.4;
-    color: var(--text);
-  }
-  .comment-likes {
-    font-size: 11px;
-    color: var(--muted);
-    margin-top: 4px;
-    font-family: 'DM Mono', monospace;
-  }
-
+  .comment-text { font-size: 14px; line-height: 1.4; color: var(--text); }
+  .comment-likes { font-size: 11px; color: var(--muted); margin-top: 4px; font-family: 'DM Mono', monospace; }
   .comments-loading, .comments-empty {
-    text-align: center;
-    padding: 24px;
-    font-size: 14px;
-    color: var(--muted);
+    text-align: center; padding: 24px;
+    font-size: 14px; color: var(--muted);
     font-family: 'DM Mono', monospace;
-  }
-
-  /* ── LOADING SCREEN ── */
-  #loading {
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-  }
-  .spinner {
-    width: 36px; height: 36px;
-    border: 3px solid var(--border);
-    border-top-color: var(--accent);
-    border-radius: 50%;
-    animation: spin 0.8s linear infinite;
-  }
-  @keyframes spin { to { transform: rotate(360deg); } }
-  .loading-text {
-    font-family: 'DM Mono', monospace;
-    font-size: 13px;
-    color: var(--muted);
-  }
-
-  /* ── ERROR ── */
-  .error-banner {
-    background: rgba(255,107,53,0.12);
-    border: 1px solid var(--accent2);
-    border-radius: var(--radius);
-    padding: 12px 16px;
-    font-size: 13px;
-    color: var(--accent2);
-    font-family: 'DM Mono', monospace;
-    margin-bottom: 16px;
-    line-height: 1.5;
-  }
-
-  .video-counter {
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    color: var(--muted);
-    position: absolute;
-    top: calc(env(safe-area-inset-top, 12px) + 52px);
-    right: 16px;
-    z-index: 51;
-    background: rgba(0,0,0,0.5);
-    padding: 4px 8px;
-    border-radius: 6px;
-  }
-
-  .mute-btn {
-    position: absolute;
-    top: 50%;
-    right: 16px;
-    z-index: 20;
-    background: rgba(0,0,0,0.5);
-    border: 1px solid rgba(255,255,255,0.2);
-    border-radius: 50%;
-    width: 40px; height: 40px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 18px;
-    cursor: pointer;
-    color: white;
-    transform: translateY(-50%);
-  }
-  .mute-btn:active { opacity: 0.7; }
-    color: var(--muted);
-    font-family: 'DM Mono', monospace;
-    font-size: 14px;
-    text-align: center;
-    padding: 40px 24px;
   }
 </style>
 </head>
@@ -470,17 +431,13 @@
 <div id="home" class="screen active">
   <div class="home-header">
     <h1>birdfeed</h1>
-    <span>via urlebird</span>
+    <span>tiktok viewer</span>
   </div>
   <div id="error-home"></div>
   <div class="search-row">
     <input type="text" id="username-input" placeholder="@username" autocapitalize="none" autocorrect="off" spellcheck="false" />
     <button id="go-btn">Watch</button>
   </div>
-  <div style="display:flex;justify-content:flex-end;margin-bottom:20px;">
-    <button id="diag-btn" style="background:none;border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:7px 12px;font-size:11px;font-family:'DM Mono',monospace;cursor:pointer;">test connection</button>
-  </div>
-  <div id="diag-result"></div>
   <div class="section-label">Saved accounts</div>
   <div class="saved-list" id="saved-list"></div>
 </div>
@@ -488,7 +445,7 @@
 <!-- LOADING -->
 <div id="loading" class="screen">
   <div class="spinner"></div>
-  <div class="loading-text" id="loading-text">Fetching videos…</div>
+  <div class="loading-text" id="loading-text">Loading…</div>
 </div>
 
 <!-- FEED -->
@@ -503,103 +460,53 @@
 </div>
 
 <script>
-// ── CORS PROXY WATERFALL ──
-// Tries each proxy in order until one works. Skips known-bad proxies.
-const PROXIES = [
-  url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
-  url => `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
-  url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-  url => `https://thingproxy.freeboard.io/fetch/${url}`,
-  url => `https://cors.eu.org/${url}`,
-];
+// ── CONFIG ──
+const API_KEY = 'eHeGPTxfwiYTB31IIAowMvdMQBi2';
+const API_BASE = 'https://api.scrapecreators.com';
 
-// Cache which proxy last worked so we try it first
-let _workingProxyIdx = 0;
-
-async function fetchWithTimeout(url, ms = 12000) {
-  const timeout = new Promise((_, reject) =>
-    setTimeout(() => reject(new Error('timeout')), ms)
-  );
-  return Promise.race([fetch(url), timeout]);
-}
-
-async function fetchProxy(targetUrl) {
-  // Try working proxy first, then rotate through others
-  const order = [
-    _workingProxyIdx,
-    ...[...Array(PROXIES.length).keys()].filter(i => i !== _workingProxyIdx)
-  ];
-
-  let lastErr = null;
-  for (const idx of order) {
-    const proxyUrl = PROXIES[idx](targetUrl);
-    try {
-      const res = await fetchWithTimeout(proxyUrl, 12000);
-      if (res.ok) {
-        _workingProxyIdx = idx; // remember what worked
-        return res.text();
-      }
-      lastErr = new Error(`Proxy ${idx} returned HTTP ${res.status}`);
-    } catch(e) {
-      lastErr = e;
-    }
-  }
-  throw new Error(`All proxies failed. Last error: ${lastErr?.message || 'unknown'}. Make sure you have a WiFi connection.`);
-}
-
-// ── STORAGE ──
-// Persists saved usernames in the URL hash so it works on file:// in
-// both Safari and Chrome (no server, no localStorage needed).
-// Format: #users=alice,bob,carol
+// ── STORAGE (URL hash, works on file:// in all browsers) ──
 function loadSavedFromHash() {
   try {
-    const hash = window.location.hash.slice(1);
-    const params = new URLSearchParams(hash);
+    const params = new URLSearchParams(window.location.hash.slice(1));
     const raw = params.get('users');
     return raw ? raw.split(',').filter(Boolean) : [];
   } catch(e) { return []; }
 }
-
 function saveSavedToHash(users) {
   try {
     const params = new URLSearchParams(window.location.hash.slice(1));
-    if (users.length > 0) {
-      params.set('users', users.join(','));
-    } else {
-      params.delete('users');
-    }
-    // Replace hash without triggering a page reload
+    if (users.length > 0) { params.set('users', users.join(',')); }
+    else { params.delete('users'); }
     history.replaceState(null, '', '#' + params.toString());
   } catch(e) {}
-  // Also try localStorage as a bonus backup
   try { localStorage.setItem('birdfeed_saved', JSON.stringify(users)); } catch(e) {}
 }
 
 // ── STATE ──
 let currentUser = '';
 let savedUsers = (() => {
-  // Prefer hash (works everywhere on file://), fall back to localStorage
   const fromHash = loadSavedFromHash();
   if (fromHash.length > 0) return fromHash;
   try { return JSON.parse(localStorage.getItem('birdfeed_saved') || '[]'); } catch(e) { return []; }
 })();
 let videos = [];
 let currentSlide = 0;
+let globalMuted = true;
 
 // ── DOM ──
-const homeScreen = document.getElementById('home');
+const homeScreen    = document.getElementById('home');
 const loadingScreen = document.getElementById('loading');
-const feedScreen = document.getElementById('feed');
+const feedScreen    = document.getElementById('feed');
 const usernameInput = document.getElementById('username-input');
-const goBtn = document.getElementById('go-btn');
-const savedList = document.getElementById('saved-list');
-const errorHome = document.getElementById('error-home');
-const feedUsername = document.getElementById('feed-username');
-const saveBtn = document.getElementById('save-btn');
-const backBtn = document.getElementById('back-btn');
-const videoScroll = document.getElementById('video-scroll');
-const loadingText = document.getElementById('loading-text');
-const videoCounter = document.getElementById('video-counter');
+const goBtn         = document.getElementById('go-btn');
+const savedList     = document.getElementById('saved-list');
+const errorHome     = document.getElementById('error-home');
+const feedUsername  = document.getElementById('feed-username');
+const saveBtn       = document.getElementById('save-btn');
+const backBtn       = document.getElementById('back-btn');
+const videoScroll   = document.getElementById('video-scroll');
+const loadingText   = document.getElementById('loading-text');
+const videoCounter  = document.getElementById('video-counter');
 
 // ── SCREENS ──
 function showScreen(id) {
@@ -608,9 +515,8 @@ function showScreen(id) {
 }
 
 // ── SAVED USERS ──
-function saveSavedUsers() {
-  saveSavedToHash(savedUsers);
-}
+function saveSavedUsers() { saveSavedToHash(savedUsers); }
+
 function renderSavedList() {
   if (savedUsers.length === 0) {
     savedList.innerHTML = '<div class="empty-saved">No saved accounts yet</div>';
@@ -618,8 +524,8 @@ function renderSavedList() {
   }
   savedList.innerHTML = savedUsers.map(u => `
     <div class="saved-item">
-      <button class="saved-item-btn" data-user="${u}">${u}</button>
-      <button class="saved-delete" data-user="${u}" title="Remove">×</button>
+      <button class="saved-item-btn" data-user="${escHtml(u)}">${escHtml(u)}</button>
+      <button class="saved-delete" data-user="${escHtml(u)}" title="Remove">×</button>
     </div>
   `).join('');
 }
@@ -634,11 +540,10 @@ savedList.addEventListener('click', e => {
   }
 });
 
-// ── SAVE BUTTON IN FEED ──
 function updateSaveBtn() {
-  const isSaved = savedUsers.includes(currentUser);
-  saveBtn.textContent = isSaved ? '✓ Saved' : '+ Save';
-  saveBtn.className = 'save-btn' + (isSaved ? ' saved-state' : '');
+  const saved = savedUsers.includes(currentUser);
+  saveBtn.textContent = saved ? '✓ Saved' : '+ Save';
+  saveBtn.className = 'save-btn' + (saved ? ' saved-state' : '');
 }
 saveBtn.addEventListener('click', () => {
   if (savedUsers.includes(currentUser)) {
@@ -651,39 +556,27 @@ saveBtn.addEventListener('click', () => {
   renderSavedList();
 });
 
-// ── FETCH VIDEO PAGE ──
-// Each urlebird video page has an actual <video> or embed
-async function fetchVideoPage(relUrl) {
-  const url = relUrl.startsWith('http') ? relUrl : `https://urlebird.com${relUrl}`;
-  const html = await fetchProxy(url);
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, 'text/html');
-
-  // Try to get direct video src
-  let videoUrl = null;
-
-  // Method 1: <video src="">
-  const videoEl = doc.querySelector('video[src]');
-  if (videoEl) videoUrl = videoEl.getAttribute('src');
-
-  // Method 2: <source src="">
-  if (!videoUrl) {
-    const src = doc.querySelector('video source[src]');
-    if (src) videoUrl = src.getAttribute('src');
+// ── FETCH VIDEOS FROM SCRAPECREATORS ──
+async function fetchVideos(username, cursor = '') {
+  const params = new URLSearchParams({ handle: username });
+  if (cursor) params.set('cursor', cursor);
+  const res = await fetch(`${API_BASE}/v3/tiktok/profile/videos?${params}`, {
+    headers: { 'x-api-key': API_KEY }
+  });
+  if (!res.ok) {
+    const txt = await res.text().catch(() => '');
+    throw new Error(`API error ${res.status}: ${txt.slice(0, 200)}`);
   }
+  return res.json();
+}
 
-  // Method 3: look for a CDN link in script/data attrs
-  if (!videoUrl) {
-    const match = html.match(/https?:\/\/[^"'\s]+\.mp4[^"'\s]*/);
-    if (match) videoUrl = match[0];
-  }
-
-  // Caption: grab description text
-  let caption = '';
-  const descEl = doc.querySelector('.video-desc, .desc, [class*="desc"], [class*="caption"], h1, .title');
-  if (descEl) caption = descEl.textContent.trim();
-
-  return { videoUrl, caption, pageUrl: url };
+// ── FETCH COMMENTS ──
+async function fetchComments(videoId) {
+  const res = await fetch(`${API_BASE}/v1/tiktok/video/comments?video_id=${videoId}`, {
+    headers: { 'x-api-key': API_KEY }
+  });
+  if (!res.ok) throw new Error(`Comments API error ${res.status}`);
+  return res.json();
 }
 
 // ── LOAD USER ──
@@ -693,94 +586,74 @@ async function loadUser(username) {
   currentUser = username;
   errorHome.innerHTML = '';
   videos = [];
-
-  const status = msg => { loadingText.textContent = msg; };
   showScreen('loading');
+  loadingText.textContent = `Loading @${username}…`;
 
   try {
-    status(`Step 1/3 — connecting…`);
-    const userUrl = `https://urlebird.com/user/${username}/`;
-    let html;
-    try {
-      html = await fetchProxy(userUrl);
-    } catch(e) {
-      throw new Error(`Connection failed: ${e.message}`);
+    const data = await fetchVideos(username);
+
+    const rawList = data?.aweme_list || data?.videos || data?.data || [];
+    if (!rawList.length) {
+      throw new Error(`No videos found for "@${username}". Check the username and try again.`);
     }
 
-    status(`Step 2/3 — reading @${username}…`);
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
+    videos = rawList.map(parseVideo).filter(v => v.videoUrl);
 
-    // Check if page looks valid
-    const pageTitle = doc.querySelector('title')?.textContent || '';
-    if (pageTitle.toLowerCase().includes('not found') || pageTitle.toLowerCase().includes('404')) {
-      throw new Error(`User "@${username}" not found on urlebird. Check the spelling.`);
+    if (!videos.length) {
+      throw new Error(`Found ${rawList.length} posts but couldn't extract playable video URLs. The account may only have slideshows or private content.`);
     }
 
-    const links = [...new Set(
-      [...doc.querySelectorAll('a[href]')]
-        .map(a => a.getAttribute('href'))
-        .filter(h => h && h.includes('/video/'))
-    )];
-
-    if (links.length === 0) {
-      // Show what we actually got to help debug
-      const bodySnippet = (doc.body?.textContent || '').slice(0, 200).trim();
-      throw new Error(`No videos found for "@${username}". Page content: "${bodySnippet}"`);
-    }
-
-    status(`Step 3/3 — loading ${links.length} videos…`);
-
-    const firstBatch = links.slice(0, 5);
-    const fetched = await Promise.allSettled(firstBatch.map(fetchVideoPage));
-
-    videos = fetched
-      .filter(r => r.status === 'fulfilled' && r.value.videoUrl)
-      .map(r => r.value);
-
-    window._pendingLinks = links.slice(5);
-
-    if (videos.length === 0) {
-      const reasons = fetched.map((r,i) =>
-        r.status === 'rejected' ? `v${i+1}: ${r.reason?.message}` :
-        !r.value.videoUrl ? `v${i+1}: no video URL found` : `v${i+1}: ok`
-      ).join(' | ');
-      throw new Error(`Fetched ${links.length} video pages but couldn't extract any playable URLs. Details: ${reasons}`);
-    }
+    // Store cursor for lazy loading more
+    window._nextCursor = data?.cursor || data?.next_cursor || '';
+    window._currentHandle = username;
+    window._pendingLoad = false;
 
     buildFeed();
     showScreen('feed');
     feedUsername.textContent = '@' + username;
     updateSaveBtn();
-    lazyLoadMore();
 
-  } catch (err) {
+  } catch(err) {
     showScreen('home');
-    errorHome.innerHTML = `<div class="error-banner">⚠ ${err.message}</div>`;
+    errorHome.innerHTML = `<div class="error-banner">⚠ ${escHtml(err.message)}</div>`;
   }
 }
 
-// ── LAZY LOAD MORE ──
-async function lazyLoadMore() {
-  const pending = window._pendingLinks || [];
-  if (pending.length === 0) return;
-  const batch = pending.splice(0, 5);
-  window._pendingLinks = pending;
+// ── PARSE A VIDEO OBJECT ──
+function parseVideo(item) {
+  const id = item?.aweme_id || item?.id || '';
+  const desc = item?.desc || item?.description || '';
+  const author = item?.author?.unique_id || item?.author?.uniqueId || '';
 
-  const fetched = await Promise.allSettled(batch.map(fetchVideoPage));
-  const newVideos = fetched
-    .filter(r => r.status === 'fulfilled' && r.value.videoUrl)
-    .map(r => r.value);
+  // Video URL — try multiple fields
+  const videoUrl =
+    item?.video?.play_addr?.url_list?.[0] ||
+    item?.video?.download_addr?.url_list?.[0] ||
+    item?.video?.playAddr ||
+    item?.video?.downloadAddr ||
+    item?.play_url ||
+    '';
 
-  newVideos.forEach(v => {
-    videos.push(v);
-    appendSlide(v, videos.length - 1);
-  });
+  // Cover image
+  const cover =
+    item?.video?.cover?.url_list?.[0] ||
+    item?.video?.origin_cover?.url_list?.[0] ||
+    item?.video?.cover ||
+    '';
 
-  updateCounter();
+  const stats = {
+    plays:    fmt(item?.statistics?.play_count    || item?.stats?.playCount    || 0),
+    likes:    fmt(item?.statistics?.digg_count    || item?.stats?.diggCount    || 0),
+    comments: fmt(item?.statistics?.comment_count || item?.stats?.commentCount || 0),
+  };
 
-  // Continue loading
-  if (pending.length > 0) setTimeout(lazyLoadMore, 500);
+  return { id, author, desc, videoUrl, cover, stats };
+}
+
+function fmt(n) {
+  if (n >= 1000000) return (n/1000000).toFixed(1) + 'M';
+  if (n >= 1000) return (n/1000).toFixed(1) + 'K';
+  return String(n);
 }
 
 // ── BUILD FEED ──
@@ -797,9 +670,11 @@ function appendSlide(v, i) {
   slide.className = 'video-slide';
   slide.dataset.index = i;
 
+  const hasCaption = v.desc && v.desc.trim().length > 0;
+
   slide.innerHTML = `
     <video
-      src="${v.videoUrl}"
+      src="${escHtml(v.videoUrl)}"
       playsinline
       webkit-playsinline
       muted
@@ -808,13 +683,16 @@ function appendSlide(v, i) {
     ></video>
     <button class="mute-btn" onclick="toggleMute()">🔇</button>
     <div class="video-overlay">
-      ${v.caption ? `
-        <div class="video-caption" id="cap-${i}">${escHtml(v.caption)}</div>
+      ${hasCaption ? `
+        <div class="video-caption" id="cap-${i}">${escHtml(v.desc)}</div>
         <button class="caption-toggle" id="captoggle-${i}" onclick="toggleCaption(${i})">more</button>
       ` : ''}
-      <button class="comments-toggle" onclick="openComments(${i})">
-        💬 Comments
-      </button>
+      <div class="video-stats">
+        <span>▶ ${v.stats.plays}</span>
+        <span>♥ ${v.stats.likes}</span>
+        <span>💬 ${v.stats.comments}</span>
+      </div>
+      ${v.id ? `<button class="comments-toggle" onclick="openComments(${i})">💬 Comments</button>` : ''}
     </div>
     <div class="comments-drawer" id="drawer-${i}">
       <div class="drawer-handle"></div>
@@ -827,20 +705,10 @@ function appendSlide(v, i) {
       </div>
     </div>
   `;
-
   videoScroll.appendChild(slide);
 }
 
-// ── MUTE STATE ──
-let globalMuted = true; // start muted for Chrome autoplay compliance
-
-function toggleMute() {
-  globalMuted = !globalMuted;
-  document.querySelectorAll('.video-slide video').forEach(v => { v.muted = globalMuted; });
-  document.querySelectorAll('.mute-btn').forEach(b => { b.textContent = globalMuted ? '🔇' : '🔊'; });
-}
-
-
+// ── CAPTION TOGGLE ──
 function toggleCaption(i) {
   const cap = document.getElementById('cap-' + i);
   const btn = document.getElementById('captoggle-' + i);
@@ -849,7 +717,14 @@ function toggleCaption(i) {
   btn.textContent = expanded ? 'less' : 'more';
 }
 
-// ── SCROLL OBSERVER (autoplay) ──
+// ── MUTE TOGGLE ──
+function toggleMute() {
+  globalMuted = !globalMuted;
+  document.querySelectorAll('.video-slide video').forEach(v => { v.muted = globalMuted; });
+  document.querySelectorAll('.mute-btn').forEach(b => { b.textContent = globalMuted ? '🔇' : '🔊'; });
+}
+
+// ── SCROLL OBSERVER ──
 let currentlyPlaying = null;
 
 function setupScrollObserver() {
@@ -869,8 +744,12 @@ function setupScrollObserver() {
         currentlyPlaying = video;
         currentSlide = parseInt(slide.dataset.index);
         updateCounter();
-        // Close any open comment drawer on scroll
         document.querySelectorAll('.comments-drawer.open').forEach(d => d.classList.remove('open'));
+
+        // Lazy-load more videos when near the end
+        if (currentSlide >= videos.length - 3 && window._nextCursor && !window._pendingLoad) {
+          loadMoreVideos();
+        }
       } else {
         video.pause();
       }
@@ -881,6 +760,30 @@ function setupScrollObserver() {
   window._observer = observer;
 }
 
+// ── LOAD MORE (pagination) ──
+async function loadMoreVideos() {
+  if (!window._nextCursor || window._pendingLoad) return;
+  window._pendingLoad = true;
+  try {
+    const data = await fetchVideos(window._currentHandle, window._nextCursor);
+    const rawList = data?.aweme_list || data?.videos || data?.data || [];
+    const newVideos = rawList.map(parseVideo).filter(v => v.videoUrl);
+    newVideos.forEach(v => {
+      videos.push(v);
+      appendSlide(v, videos.length - 1);
+      // observe the new slide
+      const slides = document.querySelectorAll('.video-slide');
+      const lastSlide = slides[slides.length - 1];
+      if (window._observer && lastSlide) window._observer.observe(lastSlide);
+    });
+    window._nextCursor = data?.cursor || data?.next_cursor || '';
+    updateCounter();
+  } catch(e) {
+    // silently fail — user just won't get more videos
+  }
+  window._pendingLoad = false;
+}
+
 // ── COUNTER ──
 function updateCounter() {
   videoCounter.textContent = `${currentSlide + 1} / ${videos.length}`;
@@ -889,49 +792,38 @@ function updateCounter() {
 // ── COMMENTS ──
 async function openComments(i) {
   const drawer = document.getElementById('drawer-' + i);
-  const list = document.getElementById('comments-' + i);
+  const list   = document.getElementById('comments-' + i);
   drawer.classList.add('open');
-
   if (list.dataset.loaded) return;
   list.dataset.loaded = 'true';
   list.innerHTML = '<div class="comments-loading">Loading comments…</div>';
 
   try {
     const v = videos[i];
-    const html = await fetchProxy(v.pageUrl);
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
+    const data = await fetchComments(v.id);
+    const comments = data?.comments || data?.data || [];
 
-    // urlebird shows comments in elements like .comment-item, .cmt, etc.
-    // Try several selectors
-    const commentEls = doc.querySelectorAll(
-      '.comment-item, .comment, [class*="comment-"], .cmt-item, .cmt'
-    );
-
-    if (commentEls.length === 0) {
-      list.innerHTML = '<div class="comments-empty">No comments found on this page.</div>';
+    if (!comments.length) {
+      list.innerHTML = '<div class="comments-empty">No comments found.</div>';
       return;
     }
 
-    const items = [...commentEls].slice(0, 50).map(el => {
-      const user = el.querySelector('[class*="user"], [class*="name"], [class*="author"], strong')?.textContent?.trim() || '?';
-      const text = el.querySelector('[class*="text"], [class*="content"], p, span')?.textContent?.trim() || el.textContent?.trim();
-      const likes = el.querySelector('[class*="like"], [class*="heart"]')?.textContent?.trim() || '';
-      return { user, text, likes };
-    });
-
-    list.innerHTML = items.map(c => `
-      <div class="comment-item">
-        <div class="comment-avatar">${escHtml((c.user[0] || '?').toUpperCase())}</div>
-        <div class="comment-body">
-          <div class="comment-user">@${escHtml(c.user)}</div>
-          <div class="comment-text">${escHtml(c.text)}</div>
-          ${c.likes ? `<div class="comment-likes">♥ ${escHtml(c.likes)}</div>` : ''}
+    list.innerHTML = comments.slice(0, 50).map(c => {
+      const user  = c?.user?.unique_id || c?.user?.nickname || c?.author || '?';
+      const text  = c?.text || c?.comment || '';
+      const likes = c?.digg_count || c?.like_count || 0;
+      return `
+        <div class="comment-item">
+          <div class="comment-avatar">${escHtml((user[0] || '?').toUpperCase())}</div>
+          <div class="comment-body">
+            <div class="comment-user">@${escHtml(user)}</div>
+            <div class="comment-text">${escHtml(text)}</div>
+            ${likes ? `<div class="comment-likes">♥ ${fmt(likes)}</div>` : ''}
+          </div>
         </div>
-      </div>
-    `).join('');
-
-  } catch (err) {
+      `;
+    }).join('');
+  } catch(e) {
     list.innerHTML = `<div class="comments-empty">Couldn't load comments.</div>`;
   }
 }
@@ -942,13 +834,12 @@ function closeComments(i) {
 
 // ── BACK ──
 backBtn.addEventListener('click', () => {
-  // Pause all videos
   document.querySelectorAll('video').forEach(v => v.pause());
   if (window._observer) window._observer.disconnect();
   showScreen('home');
 });
 
-// ── GO BUTTON ──
+// ── GO ──
 goBtn.addEventListener('click', () => loadUser(usernameInput.value));
 usernameInput.addEventListener('keydown', e => { if (e.key === 'Enter') loadUser(usernameInput.value); });
 
@@ -956,24 +847,6 @@ usernameInput.addEventListener('keydown', e => { if (e.key === 'Enter') loadUser
 function escHtml(str) {
   return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
-
-// ── DIAGNOSTICS ──
-document.getElementById('diag-btn').addEventListener('click', async () => {
-  const out = document.getElementById('diag-result');
-  out.innerHTML = '<div class="error-banner" style="color:var(--muted)">Testing proxies…</div>';
-  const testUrl = 'https://urlebird.com/user/test/';
-  const results = [];
-  for (let i = 0; i < PROXIES.length; i++) {
-    const proxyUrl = PROXIES[i](testUrl);
-    try {
-      const res = await fetchWithTimeout(proxyUrl, 8000);
-      results.push(`${i+1}. ${res.ok ? '✓' : '✗ HTTP '+res.status} — ${proxyUrl.split('?')[0].replace('https://','')}`);
-    } catch(e) {
-      results.push(`${i+1}. ✗ ${e.message?.slice(0,40) || 'failed'} — ${proxyUrl.split('?')[0].replace('https://','')}`);
-    }
-  }
-  out.innerHTML = `<div class="error-banner" style="font-size:11px;line-height:1.8;">${results.join('<br>')}</div>`;
-});
 
 // ── INIT ──
 renderSavedList();
