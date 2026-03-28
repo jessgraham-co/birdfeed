@@ -273,10 +273,10 @@
     background: #000;
   }
 
-  .video-slide video {
+  .video-slide iframe {
     width: 100%;
     height: 100%;
-    object-fit: contain;
+    border: none;
     position: absolute;
     top: 0; left: 0;
   }
@@ -738,15 +738,13 @@ function appendSlide(v, i) {
   const hasCaption = v.desc && v.desc.trim().length > 0;
 
   slide.innerHTML = `
-    <video
-      src="${escHtml(v.videoUrl)}"
-      playsinline
-      webkit-playsinline
-      muted
-      preload="none"
-      loop
-    ></video>
-    <button class="mute-btn" onclick="toggleMute()">🔇</button>
+    <iframe
+      data-id="${escHtml(v.id)}"
+      src="about:blank"
+      allowfullscreen
+      allow="autoplay; encrypted-media"
+      scrolling="no"
+    ></iframe>
     <div class="video-overlay">
       ${hasCaption ? `
         <div class="video-caption" id="cap-${i}">${escHtml(v.desc)}</div>
@@ -782,41 +780,34 @@ function toggleCaption(i) {
   btn.textContent = expanded ? 'less' : 'more';
 }
 
-// ── MUTE TOGGLE ──
-function toggleMute() {
-  globalMuted = !globalMuted;
-  document.querySelectorAll('.video-slide video').forEach(v => { v.muted = globalMuted; });
-  document.querySelectorAll('.mute-btn').forEach(b => { b.textContent = globalMuted ? '🔇' : '🔊'; });
-}
-
-// ── SCROLL OBSERVER ──
-let currentlyPlaying = null;
-
+// ── BACK ──
+backBtn.addEventListener('click', () => {
+  // Unload all iframes to stop playback
+  document.querySelectorAll('.video-slide iframe').forEach(f => { f.src = 'about:blank'; });
+  if (window._observer) window._observer.disconnect();
+  showScreen('home');
+  updateCreditBadge(getCredits());
+  renderSavedList();
+});
 function setupScrollObserver() {
   if (window._observer) window._observer.disconnect();
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       const slide = entry.target;
-      const video = slide.querySelector('video');
-      if (!video) return;
+      const iframe = slide.querySelector('iframe');
+      if (!iframe) return;
+      const videoId = iframe.dataset.id;
       if (entry.isIntersecting && entry.intersectionRatio >= 0.6) {
-        if (currentlyPlaying && currentlyPlaying !== video) {
-          currentlyPlaying.pause();
-          currentlyPlaying.currentTime = 0;
+        // Load the iframe when it comes into view
+        if (!iframe.src || iframe.src === 'about:blank') {
+          iframe.src = `https://www.tiktok.com/embed/v2/${videoId}`;
         }
-        video.muted = globalMuted;
-        video.play().catch(() => {});
-        currentlyPlaying = video;
         currentSlide = parseInt(slide.dataset.index);
         updateCounter();
         document.querySelectorAll('.comments-drawer.open').forEach(d => d.classList.remove('open'));
-
-        // Lazy-load more videos when near the end
         if (currentSlide >= videos.length - 3 && window._nextCursor && !window._pendingLoad) {
           loadMoreVideos();
         }
-      } else {
-        video.pause();
       }
     });
   }, { threshold: 0.6 });
@@ -899,7 +890,7 @@ function closeComments(i) {
 
 // ── BACK ──
 backBtn.addEventListener('click', () => {
-  document.querySelectorAll('video').forEach(v => v.pause());
+  // Unload all iframes to stop playback
   if (window._observer) window._observer.disconnect();
   showScreen('home');
   updateCreditBadge(getCredits());
@@ -923,7 +914,7 @@ function getCredits() {
     if (stored !== null) return parseInt(stored);
     // Fall back to localStorage for anyone upgrading from old version
     const ls = localStorage.getItem('birdfeed_credits');
-    return ls !== null ? parseInt(ls) : 99;
+    return ls !== null ? parseInt(ls) : 98;
   } catch(e) { return 100; }
 }
 function spendCredit() {
