@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>birdfeed</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500;700&display=swap');
+
+  :root {
+    --bg: #0a0a0a;
+    --surface: #141414;
+    --surface2: #1e1e1e;
+    --border: #2a2a2a;
+    --text: #f0f0f0;
+    --muted: #666;
+    --accent: #e8ff47;
+    --accent2: #ff6b35;
+    --radius: 12px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    overscroll-behavior: none;
+  }
+
+  /* ── SCREENS ── */
+  .screen { display: none; height: 100vh; height: 100dvh; flex-direction: column; }
+  .screen.active { display: flex; }
+
+  /* ── HOME SCREEN ── */
+  #home {
+    padding: 0 24px;
+    padding-top: env(safe-area-inset-top, 20px);
+    gap: 0;
+  }
+
+  .home-header {
+    padding: 28px 0 20px;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .home-header h1 {
+    font-family: 'DM Mono', monospace;
+    font-size: 28px;
+    font-weight: 500;
+    letter-spacing: -1px;
+    color: var(--accent);
+  }
+  .home-header span {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .search-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 32px;
+  }
+  .search-row input {
+    flex: 1;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    font-size: 16px;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .search-row input::placeholder { color: var(--muted); }
+  .search-row input:focus { border-color: var(--accent); }
+  .search-row button {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: var(--radius);
+    padding: 14px 20px;
+    font-size: 15px;
+    font-weight: 700;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity 0.15s;
+  }
+  .search-row button:active { opacity: 0.8; }
+
+  .section-label {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .saved-list {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-bottom: 32px;
+  }
+  .saved-item {
+    display: flex;
+    align-items: center;
+    background: var(--surface);
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .saved-item-btn {
+    flex: 1;
+    padding: 14px 16px;
+    background: none;
+    border: none;
+    color: var(--text);
+    font-size: 15px;
+    font-family: 'DM Sans', sans-serif;
+    text-align: left;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .saved-item-btn::before {
+    content: '@';
+    color: var(--accent);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+  }
+  .saved-delete {
+    padding: 14px 16px;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 18px;
+    cursor: pointer;
+    line-height: 1;
+  }
+  .saved-delete:active { color: var(--accent2); }
+
+  .empty-saved {
+    color: var(--muted);
+    font-size: 14px;
+    text-align: center;
+    padding: 24px 0;
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* ── FEED SCREEN ── */
+  #feed {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .feed-topbar {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    z-index: 50;
+    padding: env(safe-area-inset-top, 12px) 16px 12px;
+    background: linear-gradient(to bottom, rgba(10,10,10,0.95) 60%, transparent);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .back-btn {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 14px;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .back-btn:active { opacity: 0.7; }
+  .feed-username {
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    color: var(--accent);
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .save-btn {
+    background: none;
+    border: 1.5px solid var(--accent);
+    color: var(--accent);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12px;
+    font-family: 'DM Mono', monospace;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .save-btn.saved-state {
+    background: var(--accent);
+    color: #000;
+  }
+  .save-btn:active { opacity: 0.7; }
+
+  .video-scroll {
+    flex: 1;
+    overflow-y: scroll;
+    scroll-snap-type: y mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .video-scroll::-webkit-scrollbar { display: none; }
+
+  .video-slide {
+    height: 100vh;
+    height: 100dvh;
+    scroll-snap-align: start;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #000;
+  }
+
+  .video-slide video {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    position: absolute;
+    top: 0; left: 0;
+  }
+
+  .video-overlay {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    z-index: 10;
+    padding: 80px 16px 32px;
+    background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 100%);
+    padding-bottom: max(32px, env(safe-area-inset-bottom));
+  }
+
+  .video-caption {
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--text);
+    margin-bottom: 12px;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .video-caption.expanded {
+    display: block;
+    -webkit-line-clamp: unset;
+  }
+  .caption-toggle {
+    background: none;
+    border: none;
+    color: var(--accent);
+    font-size: 12px;
+    font-family: 'DM Mono', monospace;
+    cursor: pointer;
+    padding: 0;
+    margin-bottom: 12px;
+    display: block;
+  }
+
+  .comments-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 20px;
+    padding: 8px 16px;
+    color: var(--text);
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    cursor: pointer;
+    width: fit-content;
+  }
+  .comments-toggle:active { opacity: 0.7; }
+
+  /* ── COMMENTS DRAWER ── */
+  .comments-drawer {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    z-index: 100;
+    background: var(--surface);
+    border-radius: 20px 20px 0 0;
+    border-top: 1px solid var(--border);
+    max-height: 70dvh;
+    display: flex;
+    flex-direction: column;
+    transform: translateY(100%);
+    transition: transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .comments-drawer.open { transform: translateY(0); }
+
+  .drawer-handle {
+    width: 36px; height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin: 12px auto 8px;
+    flex-shrink: 0;
+  }
+  .drawer-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 20px 12px;
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .drawer-header h3 {
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .drawer-close {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 22px;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+  }
+
+  .comments-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .comment-item {
+    display: flex;
+    gap: 12px;
+  }
+  .comment-avatar {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    color: var(--muted);
+    flex-shrink: 0;
+    font-family: 'DM Mono', monospace;
+  }
+  .comment-body {}
+  .comment-user {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent);
+    font-family: 'DM Mono', monospace;
+    margin-bottom: 3px;
+  }
+  .comment-text {
+    font-size: 14px;
+    line-height: 1.4;
+    color: var(--text);
+  }
+  .comment-likes {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 4px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .comments-loading, .comments-empty {
+    text-align: center;
+    padding: 24px;
+    font-size: 14px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* ── LOADING SCREEN ── */
+  #loading {
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+  }
+  .spinner {
+    width: 36px; height: 36px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  /* ── ERROR ── */
+  .error-banner {
+    background: rgba(255,107,53,0.12);
+    border: 1px solid var(--accent2);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    font-size: 13px;
+    color: var(--accent2);
+    font-family: 'DM Mono', monospace;
+    margin-bottom: 16px;
+    line-height: 1.5;
+  }
+
+  .video-counter {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--muted);
+    position: absolute;
+    top: calc(env(safe-area-inset-top, 12px) + 52px);
+    right: 16px;
+    z-index: 51;
+    background: rgba(0,0,0,0.5);
+    padding: 4px 8px;
+    border-radius: 6px;
+  }
+
+  .mute-btn {
+    position: absolute;
+    top: 50%;
+    right: 16px;
+    z-index: 20;
+    background: rgba(0,0,0,0.5);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 50%;
+    width: 40px; height: 40px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    cursor: pointer;
+    color: white;
+    transform: translateY(-50%);
+  }
+  .mute-btn:active { opacity: 0.7; }
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    text-align: center;
+    padding: 40px 24px;
+  }
+</style>
+</head>
+<body>
+
+<!-- HOME -->
+<div id="home" class="screen active">
+  <div class="home-header">
+    <h1>birdfeed</h1>
+    <span>via urlebird</span>
+  </div>
+  <div id="error-home"></div>
+  <div class="search-row">
+    <input type="text" id="username-input" placeholder="@username" autocapitalize="none" autocorrect="off" spellcheck="false" />
+    <button id="go-btn">Watch</button>
+  </div>
+  <div style="display:flex;justify-content:flex-end;margin-bottom:20px;">
+    <button id="diag-btn" style="background:none;border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:7px 12px;font-size:11px;font-family:'DM Mono',monospace;cursor:pointer;">test connection</button>
+  </div>
+  <div id="diag-result"></div>
+  <div class="section-label">Saved accounts</div>
+  <div class="saved-list" id="saved-list"></div>
+</div>
+
+<!-- LOADING -->
+<div id="loading" class="screen">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loading-text">Fetching videos…</div>
+</div>
+
+<!-- FEED -->
+<div id="feed" class="screen">
+  <div class="feed-topbar">
+    <button class="back-btn" id="back-btn">← Back</button>
+    <div class="feed-username" id="feed-username"></div>
+    <button class="save-btn" id="save-btn">+ Save</button>
+  </div>
+  <div class="video-counter" id="video-counter"></div>
+  <div class="video-scroll" id="video-scroll"></div>
+</div>
+
+<script>
+// ── CORS PROXY WATERFALL ──
+// Tries each proxy in order until one works. Skips known-bad proxies.
+const PROXIES = [
+  url => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+  url => `https://corsproxy.io/?url=${encodeURIComponent(url)}`,
+  url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+  url => `https://thingproxy.freeboard.io/fetch/${url}`,
+  url => `https://cors.eu.org/${url}`,
+];
+
+// Cache which proxy last worked so we try it first
+let _workingProxyIdx = 0;
+
+async function fetchWithTimeout(url, ms = 12000) {
+  const timeout = new Promise((_, reject) =>
+    setTimeout(() => reject(new Error('timeout')), ms)
+  );
+  return Promise.race([fetch(url), timeout]);
+}
+
+async function fetchProxy(targetUrl) {
+  // Try working proxy first, then rotate through others
+  const order = [
+    _workingProxyIdx,
+    ...[...Array(PROXIES.length).keys()].filter(i => i !== _workingProxyIdx)
+  ];
+
+  let lastErr = null;
+  for (const idx of order) {
+    const proxyUrl = PROXIES[idx](targetUrl);
+    try {
+      const res = await fetchWithTimeout(proxyUrl, 12000);
+      if (res.ok) {
+        _workingProxyIdx = idx; // remember what worked
+        return res.text();
+      }
+      lastErr = new Error(`Proxy ${idx} returned HTTP ${res.status}`);
+    } catch(e) {
+      lastErr = e;
+    }
+  }
+  throw new Error(`All proxies failed. Last error: ${lastErr?.message || 'unknown'}. Make sure you have a WiFi connection.`);
+}
+
+// ── STORAGE ──
+// Persists saved usernames in the URL hash so it works on file:// in
+// both Safari and Chrome (no server, no localStorage needed).
+// Format: #users=alice,bob,carol
+function loadSavedFromHash() {
+  try {
+    const hash = window.location.hash.slice(1);
+    const params = new URLSearchParams(hash);
+    const raw = params.get('users');
+    return raw ? raw.split(',').filter(Boolean) : [];
+  } catch(e) { return []; }
+}
+
+function saveSavedToHash(users) {
+  try {
+    const params = new URLSearchParams(window.location.hash.slice(1));
+    if (users.length > 0) {
+      params.set('users', users.join(','));
+    } else {
+      params.delete('users');
+    }
+    // Replace hash without triggering a page reload
+    history.replaceState(null, '', '#' + params.toString());
+  } catch(e) {}
+  // Also try localStorage as a bonus backup
+  try { localStorage.setItem('birdfeed_saved', JSON.stringify(users)); } catch(e) {}
+}
+
+// ── STATE ──
+let currentUser = '';
+let savedUsers = (() => {
+  // Prefer hash (works everywhere on file://), fall back to localStorage
+  const fromHash = loadSavedFromHash();
+  if (fromHash.length > 0) return fromHash;
+  try { return JSON.parse(localStorage.getItem('birdfeed_saved') || '[]'); } catch(e) { return []; }
+})();
+let videos = [];
+let currentSlide = 0;
+
+// ── DOM ──
+const homeScreen = document.getElementById('home');
+const loadingScreen = document.getElementById('loading');
+const feedScreen = document.getElementById('feed');
+const usernameInput = document.getElementById('username-input');
+const goBtn = document.getElementById('go-btn');
+const savedList = document.getElementById('saved-list');
+const errorHome = document.getElementById('error-home');
+const feedUsername = document.getElementById('feed-username');
+const saveBtn = document.getElementById('save-btn');
+const backBtn = document.getElementById('back-btn');
+const videoScroll = document.getElementById('video-scroll');
+const loadingText = document.getElementById('loading-text');
+const videoCounter = document.getElementById('video-counter');
+
+// ── SCREENS ──
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+// ── SAVED USERS ──
+function saveSavedUsers() {
+  saveSavedToHash(savedUsers);
+}
+function renderSavedList() {
+  if (savedUsers.length === 0) {
+    savedList.innerHTML = '<div class="empty-saved">No saved accounts yet</div>';
+    return;
+  }
+  savedList.innerHTML = savedUsers.map(u => `
+    <div class="saved-item">
+      <button class="saved-item-btn" data-user="${u}">${u}</button>
+      <button class="saved-delete" data-user="${u}" title="Remove">×</button>
+    </div>
+  `).join('');
+}
+savedList.addEventListener('click', e => {
+  const btn = e.target.closest('.saved-item-btn');
+  const del = e.target.closest('.saved-delete');
+  if (btn) loadUser(btn.dataset.user);
+  if (del) {
+    savedUsers = savedUsers.filter(u => u !== del.dataset.user);
+    saveSavedUsers();
+    renderSavedList();
+  }
+});
+
+// ── SAVE BUTTON IN FEED ──
+function updateSaveBtn() {
+  const isSaved = savedUsers.includes(currentUser);
+  saveBtn.textContent = isSaved ? '✓ Saved' : '+ Save';
+  saveBtn.className = 'save-btn' + (isSaved ? ' saved-state' : '');
+}
+saveBtn.addEventListener('click', () => {
+  if (savedUsers.includes(currentUser)) {
+    savedUsers = savedUsers.filter(u => u !== currentUser);
+  } else {
+    savedUsers.unshift(currentUser);
+  }
+  saveSavedUsers();
+  updateSaveBtn();
+  renderSavedList();
+});
+
+// ── FETCH VIDEO PAGE ──
+// Each urlebird video page has an actual <video> or embed
+async function fetchVideoPage(relUrl) {
+  const url = relUrl.startsWith('http') ? relUrl : `https://urlebird.com${relUrl}`;
+  const html = await fetchProxy(url);
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+
+  // Try to get direct video src
+  let videoUrl = null;
+
+  // Method 1: <video src="">
+  const videoEl = doc.querySelector('video[src]');
+  if (videoEl) videoUrl = videoEl.getAttribute('src');
+
+  // Method 2: <source src="">
+  if (!videoUrl) {
+    const src = doc.querySelector('video source[src]');
+    if (src) videoUrl = src.getAttribute('src');
+  }
+
+  // Method 3: look for a CDN link in script/data attrs
+  if (!videoUrl) {
+    const match = html.match(/https?:\/\/[^"'\s]+\.mp4[^"'\s]*/);
+    if (match) videoUrl = match[0];
+  }
+
+  // Caption: grab description text
+  let caption = '';
+  const descEl = doc.querySelector('.video-desc, .desc, [class*="desc"], [class*="caption"], h1, .title');
+  if (descEl) caption = descEl.textContent.trim();
+
+  return { videoUrl, caption, pageUrl: url };
+}
+
+// ── LOAD USER ──
+async function loadUser(username) {
+  username = username.replace('@', '').trim();
+  if (!username) return;
+  currentUser = username;
+  errorHome.innerHTML = '';
+  videos = [];
+
+  const status = msg => { loadingText.textContent = msg; };
+  showScreen('loading');
+
+  try {
+    status(`Step 1/3 — connecting…`);
+    const userUrl = `https://urlebird.com/user/${username}/`;
+    let html;
+    try {
+      html = await fetchProxy(userUrl);
+    } catch(e) {
+      throw new Error(`Connection failed: ${e.message}`);
+    }
+
+    status(`Step 2/3 — reading @${username}…`);
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+
+    // Check if page looks valid
+    const pageTitle = doc.querySelector('title')?.textContent || '';
+    if (pageTitle.toLowerCase().includes('not found') || pageTitle.toLowerCase().includes('404')) {
+      throw new Error(`User "@${username}" not found on urlebird. Check the spelling.`);
+    }
+
+    const links = [...new Set(
+      [...doc.querySelectorAll('a[href]')]
+        .map(a => a.getAttribute('href'))
+        .filter(h => h && h.includes('/video/'))
+    )];
+
+    if (links.length === 0) {
+      // Show what we actually got to help debug
+      const bodySnippet = (doc.body?.textContent || '').slice(0, 200).trim();
+      throw new Error(`No videos found for "@${username}". Page content: "${bodySnippet}"`);
+    }
+
+    status(`Step 3/3 — loading ${links.length} videos…`);
+
+    const firstBatch = links.slice(0, 5);
+    const fetched = await Promise.allSettled(firstBatch.map(fetchVideoPage));
+
+    videos = fetched
+      .filter(r => r.status === 'fulfilled' && r.value.videoUrl)
+      .map(r => r.value);
+
+    window._pendingLinks = links.slice(5);
+
+    if (videos.length === 0) {
+      const reasons = fetched.map((r,i) =>
+        r.status === 'rejected' ? `v${i+1}: ${r.reason?.message}` :
+        !r.value.videoUrl ? `v${i+1}: no video URL found` : `v${i+1}: ok`
+      ).join(' | ');
+      throw new Error(`Fetched ${links.length} video pages but couldn't extract any playable URLs. Details: ${reasons}`);
+    }
+
+    buildFeed();
+    showScreen('feed');
+    feedUsername.textContent = '@' + username;
+    updateSaveBtn();
+    lazyLoadMore();
+
+  } catch (err) {
+    showScreen('home');
+    errorHome.innerHTML = `<div class="error-banner">⚠ ${err.message}</div>`;
+  }
+}
+
+// ── LAZY LOAD MORE ──
+async function lazyLoadMore() {
+  const pending = window._pendingLinks || [];
+  if (pending.length === 0) return;
+  const batch = pending.splice(0, 5);
+  window._pendingLinks = pending;
+
+  const fetched = await Promise.allSettled(batch.map(fetchVideoPage));
+  const newVideos = fetched
+    .filter(r => r.status === 'fulfilled' && r.value.videoUrl)
+    .map(r => r.value);
+
+  newVideos.forEach(v => {
+    videos.push(v);
+    appendSlide(v, videos.length - 1);
+  });
+
+  updateCounter();
+
+  // Continue loading
+  if (pending.length > 0) setTimeout(lazyLoadMore, 500);
+}
+
+// ── BUILD FEED ──
+function buildFeed() {
+  videoScroll.innerHTML = '';
+  currentSlide = 0;
+  videos.forEach((v, i) => appendSlide(v, i));
+  updateCounter();
+  setupScrollObserver();
+}
+
+function appendSlide(v, i) {
+  const slide = document.createElement('div');
+  slide.className = 'video-slide';
+  slide.dataset.index = i;
+
+  slide.innerHTML = `
+    <video
+      src="${v.videoUrl}"
+      playsinline
+      webkit-playsinline
+      muted
+      preload="none"
+      loop
+    ></video>
+    <button class="mute-btn" onclick="toggleMute()">🔇</button>
+    <div class="video-overlay">
+      ${v.caption ? `
+        <div class="video-caption" id="cap-${i}">${escHtml(v.caption)}</div>
+        <button class="caption-toggle" id="captoggle-${i}" onclick="toggleCaption(${i})">more</button>
+      ` : ''}
+      <button class="comments-toggle" onclick="openComments(${i})">
+        💬 Comments
+      </button>
+    </div>
+    <div class="comments-drawer" id="drawer-${i}">
+      <div class="drawer-handle"></div>
+      <div class="drawer-header">
+        <h3>Comments</h3>
+        <button class="drawer-close" onclick="closeComments(${i})">×</button>
+      </div>
+      <div class="comments-list" id="comments-${i}">
+        <div class="comments-loading">Tap to load…</div>
+      </div>
+    </div>
+  `;
+
+  videoScroll.appendChild(slide);
+}
+
+// ── MUTE STATE ──
+let globalMuted = true; // start muted for Chrome autoplay compliance
+
+function toggleMute() {
+  globalMuted = !globalMuted;
+  document.querySelectorAll('.video-slide video').forEach(v => { v.muted = globalMuted; });
+  document.querySelectorAll('.mute-btn').forEach(b => { b.textContent = globalMuted ? '🔇' : '🔊'; });
+}
+
+
+function toggleCaption(i) {
+  const cap = document.getElementById('cap-' + i);
+  const btn = document.getElementById('captoggle-' + i);
+  if (!cap) return;
+  const expanded = cap.classList.toggle('expanded');
+  btn.textContent = expanded ? 'less' : 'more';
+}
+
+// ── SCROLL OBSERVER (autoplay) ──
+let currentlyPlaying = null;
+
+function setupScrollObserver() {
+  if (window._observer) window._observer.disconnect();
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      const slide = entry.target;
+      const video = slide.querySelector('video');
+      if (!video) return;
+      if (entry.isIntersecting && entry.intersectionRatio >= 0.6) {
+        if (currentlyPlaying && currentlyPlaying !== video) {
+          currentlyPlaying.pause();
+          currentlyPlaying.currentTime = 0;
+        }
+        video.muted = globalMuted;
+        video.play().catch(() => {});
+        currentlyPlaying = video;
+        currentSlide = parseInt(slide.dataset.index);
+        updateCounter();
+        // Close any open comment drawer on scroll
+        document.querySelectorAll('.comments-drawer.open').forEach(d => d.classList.remove('open'));
+      } else {
+        video.pause();
+      }
+    });
+  }, { threshold: 0.6 });
+
+  document.querySelectorAll('.video-slide').forEach(s => observer.observe(s));
+  window._observer = observer;
+}
+
+// ── COUNTER ──
+function updateCounter() {
+  videoCounter.textContent = `${currentSlide + 1} / ${videos.length}`;
+}
+
+// ── COMMENTS ──
+async function openComments(i) {
+  const drawer = document.getElementById('drawer-' + i);
+  const list = document.getElementById('comments-' + i);
+  drawer.classList.add('open');
+
+  if (list.dataset.loaded) return;
+  list.dataset.loaded = 'true';
+  list.innerHTML = '<div class="comments-loading">Loading comments…</div>';
+
+  try {
+    const v = videos[i];
+    const html = await fetchProxy(v.pageUrl);
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+
+    // urlebird shows comments in elements like .comment-item, .cmt, etc.
+    // Try several selectors
+    const commentEls = doc.querySelectorAll(
+      '.comment-item, .comment, [class*="comment-"], .cmt-item, .cmt'
+    );
+
+    if (commentEls.length === 0) {
+      list.innerHTML = '<div class="comments-empty">No comments found on this page.</div>';
+      return;
+    }
+
+    const items = [...commentEls].slice(0, 50).map(el => {
+      const user = el.querySelector('[class*="user"], [class*="name"], [class*="author"], strong')?.textContent?.trim() || '?';
+      const text = el.querySelector('[class*="text"], [class*="content"], p, span')?.textContent?.trim() || el.textContent?.trim();
+      const likes = el.querySelector('[class*="like"], [class*="heart"]')?.textContent?.trim() || '';
+      return { user, text, likes };
+    });
+
+    list.innerHTML = items.map(c => `
+      <div class="comment-item">
+        <div class="comment-avatar">${escHtml((c.user[0] || '?').toUpperCase())}</div>
+        <div class="comment-body">
+          <div class="comment-user">@${escHtml(c.user)}</div>
+          <div class="comment-text">${escHtml(c.text)}</div>
+          ${c.likes ? `<div class="comment-likes">♥ ${escHtml(c.likes)}</div>` : ''}
+        </div>
+      </div>
+    `).join('');
+
+  } catch (err) {
+    list.innerHTML = `<div class="comments-empty">Couldn't load comments.</div>`;
+  }
+}
+
+function closeComments(i) {
+  document.getElementById('drawer-' + i)?.classList.remove('open');
+}
+
+// ── BACK ──
+backBtn.addEventListener('click', () => {
+  // Pause all videos
+  document.querySelectorAll('video').forEach(v => v.pause());
+  if (window._observer) window._observer.disconnect();
+  showScreen('home');
+});
+
+// ── GO BUTTON ──
+goBtn.addEventListener('click', () => loadUser(usernameInput.value));
+usernameInput.addEventListener('keydown', e => { if (e.key === 'Enter') loadUser(usernameInput.value); });
+
+// ── UTILS ──
+function escHtml(str) {
+  return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ── DIAGNOSTICS ──
+document.getElementById('diag-btn').addEventListener('click', async () => {
+  const out = document.getElementById('diag-result');
+  out.innerHTML = '<div class="error-banner" style="color:var(--muted)">Testing proxies…</div>';
+  const testUrl = 'https://urlebird.com/user/test/';
+  const results = [];
+  for (let i = 0; i < PROXIES.length; i++) {
+    const proxyUrl = PROXIES[i](testUrl);
+    try {
+      const res = await fetchWithTimeout(proxyUrl, 8000);
+      results.push(`${i+1}. ${res.ok ? '✓' : '✗ HTTP '+res.status} — ${proxyUrl.split('?')[0].replace('https://','')}`);
+    } catch(e) {
+      results.push(`${i+1}. ✗ ${e.message?.slice(0,40) || 'failed'} — ${proxyUrl.split('?')[0].replace('https://','')}`);
+    }
+  }
+  out.innerHTML = `<div class="error-banner" style="font-size:11px;line-height:1.8;">${results.join('<br>')}</div>`;
+});
+
+// ── INIT ──
+renderSavedList();
+</script>
+</body>
+</html>
