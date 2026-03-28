@@ -200,7 +200,7 @@
     position: absolute;
     top: 0; left: 0; right: 0;
     z-index: 50;
-    padding: env(safe-area-inset-top, 12px) 16px 12px;
+    padding: calc(env(safe-area-inset-top, 20px) + 16px) 24px 14px;
     background: linear-gradient(to bottom, rgba(10,10,10,0.95) 60%, transparent);
     display: flex;
     align-items: center;
@@ -245,8 +245,8 @@
     font-size: 11px;
     color: var(--muted);
     position: absolute;
-    top: calc(env(safe-area-inset-top, 12px) + 52px);
-    right: 16px;
+    top: calc(env(safe-area-inset-top, 20px) + 68px);
+    right: 24px;
     z-index: 51;
     background: rgba(0,0,0,0.5);
     padding: 4px 8px;
@@ -261,6 +261,14 @@
     scrollbar-width: none;
   }
   .video-scroll::-webkit-scrollbar { display: none; }
+
+  .video-slide video {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    position: absolute;
+    top: 0; left: 0;
+  }
 
   .video-slide {
     height: 100vh;
@@ -302,7 +310,7 @@
     position: absolute;
     bottom: 0; left: 0; right: 0;
     z-index: 10;
-    padding: 80px 16px 32px;
+    padding: 80px 24px 32px;
     background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 100%);
     padding-bottom: max(32px, env(safe-area-inset-bottom));
   }
@@ -648,7 +656,7 @@ async function loadUser(username) {
       throw new Error(`No videos found for "@${username}". Check the username and try again.`);
     }
 
-    videos = rawList.map(parseVideo).filter(v => v.videoUrl);
+    videos = rawList.map(parseVideo).filter(v => v.id); // only need id for embed
 
     if (!videos.length) {
       throw new Error(`Found ${rawList.length} posts but couldn't extract playable video URLs. The account may only have slideshows or private content.`);
@@ -738,13 +746,15 @@ function appendSlide(v, i) {
   const hasCaption = v.desc && v.desc.trim().length > 0;
 
   slide.innerHTML = `
-    <iframe
-      data-id="${escHtml(v.id)}"
-      src="about:blank"
-      allowfullscreen
-      allow="autoplay; encrypted-media"
-      scrolling="no"
-    ></iframe>
+    <video
+      src="${escHtml(WORKER_URL + '?action=proxy&url=' + encodeURIComponent(v.videoUrl))}"
+      playsinline
+      webkit-playsinline
+      muted
+      preload="none"
+      loop
+    ></video>
+    <button class="mute-btn" onclick="toggleMute()">🔇</button>
     <div class="video-overlay">
       ${hasCaption ? `
         <div class="video-caption" id="cap-${i}">${escHtml(v.desc)}</div>
@@ -782,36 +792,50 @@ function toggleCaption(i) {
 
 // ── BACK ──
 backBtn.addEventListener('click', () => {
-  // Unload all iframes to stop playback
-  document.querySelectorAll('.video-slide iframe').forEach(f => { f.src = 'about:blank'; });
+  document.querySelectorAll('.video-slide video').forEach(v => v.pause());
   if (window._observer) window._observer.disconnect();
   showScreen('home');
+  saveBtn.style.display = '';
   updateCreditBadge(getCredits());
   renderSavedList();
 });
+
+// ── MUTE TOGGLE ──
+function toggleMute() {
+  globalMuted = !globalMuted;
+  document.querySelectorAll('.video-slide video').forEach(v => { v.muted = globalMuted; });
+  document.querySelectorAll('.mute-btn').forEach(b => { b.textContent = globalMuted ? '🔇' : '🔊'; });
+}
+
+// ── SCROLL OBSERVER ──
+let currentlyPlaying = null;
+
 function setupScrollObserver() {
   if (window._observer) window._observer.disconnect();
   const observer = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
       const slide = entry.target;
-      const iframe = slide.querySelector('iframe');
-      if (!iframe) return;
-      const videoId = iframe.dataset.id;
+      const video = slide.querySelector('video');
+      if (!video) return;
       if (entry.isIntersecting && entry.intersectionRatio >= 0.6) {
-        // Load the iframe when it comes into view
-        if (!iframe.src || iframe.src === 'about:blank') {
-          iframe.src = `https://www.tiktok.com/embed/v2/${videoId}`;
+        if (currentlyPlaying && currentlyPlaying !== video) {
+          currentlyPlaying.pause();
+          currentlyPlaying.currentTime = 0;
         }
+        video.muted = globalMuted;
+        video.play().catch(() => {});
+        currentlyPlaying = video;
         currentSlide = parseInt(slide.dataset.index);
         updateCounter();
         document.querySelectorAll('.comments-drawer.open').forEach(d => d.classList.remove('open'));
         if (currentSlide >= videos.length - 3 && window._nextCursor && !window._pendingLoad) {
           loadMoreVideos();
         }
+      } else {
+        video.pause();
       }
     });
   }, { threshold: 0.6 });
-
   document.querySelectorAll('.video-slide').forEach(s => observer.observe(s));
   window._observer = observer;
 }
@@ -823,7 +847,7 @@ async function loadMoreVideos() {
   try {
     const data = await fetchVideos(window._currentHandle, window._nextCursor);
     const rawList = data?.aweme_list || data?.videos || data?.data || [];
-    const newVideos = rawList.map(parseVideo).filter(v => v.videoUrl);
+    const newVideos = rawList.map(parseVideo).filter(v => v.id);
     newVideos.forEach(v => {
       videos.push(v);
       appendSlide(v, videos.length - 1);
@@ -936,7 +960,34 @@ function updateCreditBadge(count) {
   badge.style.color = count < 20 ? 'var(--accent2)' : 'var(--muted)';
 }
 
-// ── INIT ──
+// ── TEST MODE (tap title 3× to load demo feed, no credits used) ──
+let _tapCount = 0, _tapTimer = null;
+document.querySelector('.home-header h1').addEventListener('click', () => {
+  _tapCount++;
+  clearTimeout(_tapTimer);
+  _tapTimer = setTimeout(() => { _tapCount = 0; }, 800);
+  if (_tapCount >= 3) {
+    _tapCount = 0;
+    loadDemoFeed();
+  }
+});
+function loadDemoFeed() {
+  currentUser = 'demo';
+  // Use a real known-working TikTok video URL for testing
+  const testUrl = 'https://www.tiktok.com/@heyjuliasfriends/video/7338518447714470190';
+  videos = [{
+    id: '7338518447714470190',
+    author: 'heyjuliasfriends',
+    desc: 'Demo — tap 🔇 to unmute',
+    videoUrl: testUrl,
+    cover: '',
+    stats: { plays: '—', likes: '—', comments: '—' }
+  }];
+  buildFeed();
+  showScreen('feed');
+  feedUsername.textContent = '⚡ demo mode';
+  saveBtn.style.display = 'none';
+}
 renderSavedList();
 updateCreditBadge(getCredits());
 </script>
