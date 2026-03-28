@@ -600,15 +600,6 @@ async function loadUser(username) {
       throw new Error(`Found ${rawList.length} posts but couldn't extract playable video URLs. The account may only have slideshows or private content.`);
     }
 
-    // DEBUG — show raw keys from first item
-    const firstRaw = rawList[0];
-    const topKeys = Object.keys(firstRaw || {}).join(', ');
-    const videoKeys = Object.keys(firstRaw?.video || {}).join(', ');
-    const playAddr = firstRaw?.video?.play_addr?.url_list?.[0] || 'none';
-    const playAddr2 = firstRaw?.video?.playAddr || 'none';
-    loadingText.innerHTML = `keys: ${topKeys.slice(0,80)}<br>video keys: ${videoKeys.slice(0,80)}<br>play_addr: ${playAddr.slice(0,60)}<br>playAddr: ${playAddr2.slice(0,60)}`;
-    await new Promise(r => setTimeout(r, 8000));
-
     // Store cursor for lazy loading more
     window._nextCursor = data?.cursor || data?.next_cursor || '';
     window._currentHandle = username;
@@ -645,12 +636,14 @@ function parseVideo(item) {
   const desc = item?.desc || item?.description || '';
   const author = item?.author?.unique_id || item?.author?.uniqueId || '';
 
-  // Video URL — try multiple fields
+  // Video URL — play_addr can be a string or an object with url_list
+  const pa = item?.video?.play_addr;
   const videoUrl =
-    item?.video?.play_addr?.url_list?.[0] ||
+    (typeof pa === 'string' ? pa : null) ||
+    pa?.url_list?.[0] ||
     item?.video?.download_addr?.url_list?.[0] ||
-    item?.video?.playAddr ||
-    item?.video?.downloadAddr ||
+    (typeof item?.video?.downloadAddr === 'string' ? item.video.downloadAddr : null) ||
+    item?.video?.downloadAddr?.url_list?.[0] ||
     item?.play_url ||
     '';
 
