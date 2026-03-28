@@ -5,8 +5,43 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>birdfeed</title>
 
-<!-- iOS home screen icon -->
-<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='0' fill='%230a0a0a'/%3E%3Csvg x='46' y='46' width='88' height='88' viewBox='0 0 24 24' fill='none' stroke='%23e8ff47' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M16 7h.01'/%3E%3Cpath d='M3.4 18H12a8 8 0 0 0 8-8V7a4 4 0 0 0-7.28-2.3L2 20'/%3E%3Cpath d='m20 7 2 .5-2 .5'/%3E%3Cpath d='M10 18v3'/%3E%3Cpath d='M14 17.75V21'/%3E%3Cpath d='M7 18a6 6 0 0 0 3.84-10.61'/%3E%3C/svg%3E%3C/svg%3E">
+<!-- iOS home screen icon — generated via canvas at runtime for PNG compatibility -->
+<link rel="apple-touch-icon" id="apple-touch-icon" href="">
+<script>
+(function() {
+  const c = document.createElement('canvas');
+  c.width = c.height = 512;
+  const ctx = c.getContext('2d');
+  // Background
+  ctx.fillStyle = '#0a0a0a';
+  ctx.fillRect(0, 0, 512, 512);
+  // Scale bird from 24-unit viewBox to ~300px centered in 512px canvas
+  const pad = 106, size = 300, scale = size / 24;
+  ctx.translate(pad, pad);
+  ctx.scale(scale, scale);
+  ctx.strokeStyle = '#e8ff47';
+  ctx.lineWidth = 1.5 / scale * (1.5);
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  ctx.lineWidth = 1.5;
+  // Draw all bird paths
+  const paths = [
+    'M16 7h.01',
+    'M3.4 18H12a8 8 0 0 0 8-8V7a4 4 0 0 0-7.28-2.3L2 20',
+    'M20 7l2 .5-2 .5',
+    'M10 18v3',
+    'M14 17.75V21',
+    'M7 18a6 6 0 0 0 3.84-10.61'
+  ];
+  paths.forEach(d => {
+    const p = new Path2D(d);
+    ctx.stroke(p);
+  });
+  // Set as apple touch icon
+  const link = document.getElementById('apple-touch-icon');
+  if (link) link.href = c.toDataURL('image/png');
+})();
+</script>
 
 <!-- PWA / standalone mode -->
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -404,7 +439,7 @@
     </div>
   </div>
   <div id="error-home"></div>
-  <div style="position:absolute;bottom:24px;right:24px;font-family:'DM Mono',monospace;font-size:10px;color:#333;">v1.4</div>
+  <div style="position:absolute;bottom:24px;right:24px;font-family:'DM Mono',monospace;font-size:10px;color:#333;">v1.5</div>
   <div class="search-row">
     <input type="text" id="username-input" placeholder="@username" autocapitalize="none" autocorrect="off" spellcheck="false" />
     <button id="go-btn">Watch</button>
@@ -417,7 +452,7 @@
 <div id="loading" class="screen">
   <div class="spinner"></div>
   <div class="loading-text" id="loading-text">Loading…</div>
-  <div style="position:absolute;bottom:24px;font-family:'DM Mono',monospace;font-size:10px;color:#333;">v1.4</div>
+  <div style="position:absolute;bottom:24px;font-family:'DM Mono',monospace;font-size:10px;color:#333;">v1.5</div>
 </div>
 
 <!-- FEED -->
