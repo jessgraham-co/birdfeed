@@ -971,22 +971,29 @@ document.querySelector('.home-header h1').addEventListener('click', () => {
     loadDemoFeed();
   }
 });
-function loadDemoFeed() {
-  currentUser = 'demo';
-  // Use a real known-working TikTok video URL for testing
-  const testUrl = 'https://www.tiktok.com/@heyjuliasfriends/video/7338518447714470190';
-  videos = [{
-    id: '7338518447714470190',
-    author: 'heyjuliasfriends',
-    desc: 'Demo — tap 🔇 to unmute',
-    videoUrl: testUrl,
-    cover: '',
-    stats: { plays: '—', likes: '—', comments: '—' }
-  }];
-  buildFeed();
-  showScreen('feed');
-  feedUsername.textContent = '⚡ demo mode';
-  saveBtn.style.display = 'none';
+async function loadDemoFeed() {
+  errorHome.innerHTML = '';
+  videos = [];
+  showScreen('loading');
+  loadingText.textContent = 'Loading demo…';
+  try {
+    const data = await fetchVideos('heyjuliasfriends');
+    const rawList = data?.aweme_list || data?.videos || data?.data || [];
+    videos = rawList.map(parseVideo).filter(v => v.id && v.videoUrl);
+    if (!videos.length) throw new Error('No videos found in demo fetch.');
+    currentUser = 'demo';
+    window._nextCursor = data?.cursor || '';
+    window._currentHandle = 'heyjuliasfriends';
+    window._pendingLoad = false;
+    buildFeed();
+    showScreen('feed');
+    feedUsername.textContent = '⚡ demo mode';
+    saveBtn.style.display = 'none';
+    // No spendCredit() call — demo mode is free
+  } catch(err) {
+    showScreen('home');
+    errorHome.innerHTML = `<div class="error-banner">⚠ Demo failed: ${escHtml(err.message)}</div>`;
+  }
 }
 renderSavedList();
 updateCreditBadge(getCredits());
