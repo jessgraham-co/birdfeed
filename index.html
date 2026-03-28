@@ -594,16 +594,20 @@ async function loadUser(username) {
       throw new Error(`No videos found for "@${username}". Check the username and try again.`);
     }
 
-    videos = rawList.map(parseVideo).filter(v => v.id); // only need id for embed
+    videos = rawList.map(parseVideo).filter(v => v.id);
 
     if (!videos.length) {
       throw new Error(`Found ${rawList.length} posts but couldn't extract playable video URLs. The account may only have slideshows or private content.`);
     }
 
-    // DEBUG — show first video URL for 5 seconds so we can see what we're working with
-    const firstUrl = videos[0]?.videoUrl || 'EMPTY';
-    loadingText.textContent = `URL: ${firstUrl.slice(0, 100)}`;
-    await new Promise(r => setTimeout(r, 5000));
+    // DEBUG — show raw keys from first item
+    const firstRaw = rawList[0];
+    const topKeys = Object.keys(firstRaw || {}).join(', ');
+    const videoKeys = Object.keys(firstRaw?.video || {}).join(', ');
+    const playAddr = firstRaw?.video?.play_addr?.url_list?.[0] || 'none';
+    const playAddr2 = firstRaw?.video?.playAddr || 'none';
+    loadingText.innerHTML = `keys: ${topKeys.slice(0,80)}<br>video keys: ${videoKeys.slice(0,80)}<br>play_addr: ${playAddr.slice(0,60)}<br>playAddr: ${playAddr2.slice(0,60)}`;
+    await new Promise(r => setTimeout(r, 8000));
 
     // Store cursor for lazy loading more
     window._nextCursor = data?.cursor || data?.next_cursor || '';
