@@ -50,6 +50,10 @@
     font-weight: 500;
     letter-spacing: -1px;
     color: var(--accent);
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    transition: opacity 0.15s;
   }
   .home-header span {
     font-size: 12px;
@@ -443,6 +447,7 @@
 <!-- HOME -->
 <div id="home" class="screen active">
   <div class="home-header">
+    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#e8ff47" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;align-self:flex-end;margin-bottom:4px;"><path d="M16 7h.01"/><path d="M3.4 18H12a8 8 0 0 0 8-8V7a4 4 0 0 0-7.28-2.3L2 20"/><path d="m20 7 2 .5-2 .5"/><path d="M10 18v3"/><path d="M14 17.75V21"/><path d="M7 18a6 6 0 0 0 3.84-10.61"/></svg>
     <h1>birdfeed</h1>
     <span>tiktok viewer</span>
     <div id="credit-badge" style="
@@ -489,31 +494,41 @@
 // Replace WORKER_URL with your actual worker URL e.g. https://birdfeed-proxy.yourname.workers.dev
 const WORKER_URL = 'https://birdfeed-proxy.jessgraham-co.workers.dev';
 
-// ── STORAGE (URL hash, works on file:// in all browsers) ──
-function loadSavedFromHash() {
+// ── STORAGE ──
+// localStorage is the primary store (works reliably on GitHub Pages).
+// URL hash is kept in sync so bookmarked URLs also carry saved accounts.
+function loadSavedUsers() {
+  // 1. Try localStorage first (most reliable on GitHub Pages)
+  try {
+    const ls = localStorage.getItem('birdfeed_saved');
+    if (ls) {
+      const parsed = JSON.parse(ls);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch(e) {}
+  // 2. Fall back to URL hash (works on file://)
   try {
     const params = new URLSearchParams(window.location.hash.slice(1));
     const raw = params.get('users');
-    return raw ? raw.split(',').filter(Boolean) : [];
-  } catch(e) { return []; }
+    if (raw) return raw.split(',').filter(Boolean);
+  } catch(e) {}
+  return [];
 }
-function saveSavedToHash(users) {
+
+function saveSavedUsers() {
+  // Write to both so either access method works
+  try { localStorage.setItem('birdfeed_saved', JSON.stringify(savedUsers)); } catch(e) {}
   try {
     const params = new URLSearchParams(window.location.hash.slice(1));
-    if (users.length > 0) { params.set('users', users.join(',')); }
+    if (savedUsers.length > 0) { params.set('users', savedUsers.join(',')); }
     else { params.delete('users'); }
     history.replaceState(null, '', '#' + params.toString());
   } catch(e) {}
-  try { localStorage.setItem('birdfeed_saved', JSON.stringify(users)); } catch(e) {}
 }
 
 // ── STATE ──
 let currentUser = '';
-let savedUsers = (() => {
-  const fromHash = loadSavedFromHash();
-  if (fromHash.length > 0) return fromHash;
-  try { return JSON.parse(localStorage.getItem('birdfeed_saved') || '[]'); } catch(e) { return []; }
-})();
+let savedUsers = loadSavedUsers();
 let videos = [];
 let currentSlide = 0;
 let globalMuted = true;
@@ -540,7 +555,6 @@ function showScreen(id) {
 }
 
 // ── SAVED USERS ──
-function saveSavedUsers() { saveSavedToHash(savedUsers); }
 
 function getLastPostCache() {
   try { return JSON.parse(localStorage.getItem('birdfeed_lastpost') || '{}'); } catch(e) { return {}; }
@@ -960,17 +974,29 @@ function updateCreditBadge(count) {
   badge.style.color = count < 20 ? 'var(--accent2)' : 'var(--muted)';
 }
 
-// ── TEST MODE (tap title 3× to load demo feed, no credits used) ──
-let _tapCount = 0, _tapTimer = null;
-document.querySelector('.home-header h1').addEventListener('click', () => {
-  _tapCount++;
-  clearTimeout(_tapTimer);
-  _tapTimer = setTimeout(() => { _tapCount = 0; }, 800);
-  if (_tapCount >= 3) {
-    _tapCount = 0;
+// ── TEST MODE (long-press "birdfeed" title for 1 second to load demo) ──
+let _pressTimer = null;
+const _titleEl = document.querySelector('.home-header h1');
+_titleEl.addEventListener('touchstart', (e) => {
+  _pressTimer = setTimeout(() => {
+    _pressTimer = null;
+    _titleEl.style.opacity = '1';
     loadDemoFeed();
-  }
-});
+  }, 1000);
+  _titleEl.style.opacity = '0.5';
+}, { passive: true });
+_titleEl.addEventListener('touchend', () => {
+  clearTimeout(_pressTimer);
+  _pressTimer = null;
+  _titleEl.style.opacity = '1';
+}, { passive: true });
+_titleEl.addEventListener('touchmove', () => {
+  clearTimeout(_pressTimer);
+  _pressTimer = null;
+  _titleEl.style.opacity = '1';
+}, { passive: true });
+// Desktop fallback: double-click
+_titleEl.addEventListener('dblclick', () => loadDemoFeed());
 async function loadDemoFeed() {
   errorHome.innerHTML = '';
   videos = [];
